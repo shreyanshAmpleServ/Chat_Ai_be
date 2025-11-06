@@ -21,6 +21,7 @@ async function fetchAnswerFromThirdAPI(question) {
     );
   }
   const data = await res.json();
+
   return data;
   //   if (!data?.answer || typeof data.answer !== "string")
   //     throw new Error("Answer API returned an invalid payload");
@@ -33,6 +34,16 @@ const askQuestion = async (data) => {
     // const aiAnswer = { text: "This is a placeholder answer." };
     const aiAnswer = await fetchAnswerFromThirdAPI(question);
     // console.log("AI Answer:", aiAnswer);
+    let modifiedAnswer = aiAnswer?.data;
+    const isEmpty =
+      aiAnswer?.data?.trim() === "|  |\n|---|\n| None |" ||
+      aiAnswer?.data?.trim().toLowerCase().includes("none");
+
+    if (isEmpty) {
+      modifiedAnswer =
+        "I'm sorry, but there is no relevant data available to answer your question.";
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       let chatId = data?.chatId ?? null;
 
@@ -62,7 +73,7 @@ const askQuestion = async (data) => {
         data: {
           chatId: chatId,
           question,
-          aiAnswer: aiAnswer?.data ?? "No answer found",
+          aiAnswer: modifiedAnswer ?? "No answer found",
           sql_code: sql_code ?? null,
           categoryTag: categoryTag ?? null,
           createdAt: new Date(),
