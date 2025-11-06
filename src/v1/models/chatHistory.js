@@ -41,6 +41,7 @@ const askQuestion = async (data) => {
           where: { id: chatId },
           select: { id: true, user_id: true },
         });
+        console.log("Existing Chat:", chat, "for userId:", userId, chatId);
         if (!chat || chat.user_id !== userId)
           throw new Error("Chat not found or does not belong to this user");
       } else {
@@ -62,7 +63,7 @@ const askQuestion = async (data) => {
         data: {
           chatId: chatId,
           question,
-          aiAnswer: JSON.stringify(aiAnswer),
+          aiAnswer: aiAnswer?.data ?? "No answer found",
           sql_code: sql_code ?? null,
           categoryTag: categoryTag ?? null,
           createdAt: new Date(),
@@ -116,9 +117,18 @@ const getChatDetail = async (id) => {
 };
 
 // Get all chats
-const getChatHistory = async () => {
+const getChatHistory = async (
+  userId,
+  search,
+  page,
+  size,
+  startDate,
+  endDate,
+  is_active
+) => {
   try {
     const chats = await prisma.ChatHistory.findMany({
+      where: { user_id: userId },
       orderBy: [{ startTime: "desc" }, { endTime: "desc" }],
       //   includes: {
       //     ChatDetails: true,

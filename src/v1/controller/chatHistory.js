@@ -49,6 +49,7 @@ const getChatHistory = async (req, res, next) => {
   try {
     const { page, size, search, startDate, endDate, is_active } = req.query;
     const users = await chatHistoryService.getChatHistory(
+      Number(req.user.id),
       search,
       Number(page),
       Number(size),

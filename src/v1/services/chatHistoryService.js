@@ -1,6 +1,4 @@
 const chatHistoryModal = require("../models/chatHistory");
-const BCRYPT_COST = 8;
-const bcrypt = require("bcryptjs");
 
 const askQuestion = async (data) => {
   return await chatHistoryModal.askQuestion(data);
@@ -11,6 +9,7 @@ const getChatDetail = async (id) => {
 };
 
 const getChatHistory = async (
+  userId,
   search,
   page,
   size,
@@ -19,6 +18,7 @@ const getChatHistory = async (
   is_active
 ) => {
   return await chatHistoryModal.getChatHistory(
+    userId,
     search,
     page,
     size,
