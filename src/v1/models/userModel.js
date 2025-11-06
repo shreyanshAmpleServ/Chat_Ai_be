@@ -58,111 +58,56 @@ const getUserWithRole = async (userId, is_password = false) => {
 
 const createUser = async (data) => {
   try {
-    if (data.employee_id) {
-      const existingUser = await prisma.hrms_m_user.findFirst({
-        where: { employee_id: Number(data.employee_id) },
-      });
-      if (existingUser) {
-        return {
-          success: false,
-          message: "A user already exists for this employee.",
-          status: 400,
-        };
-      }
+    // if (data.employee_id) {
+    //   const existingUser = await prisma.hrms_m_user.findFirst({
+    //     where: { employee_id: Number(data.employee_id) },
+    //   });
+    //   if (existingUser) {
+    //     return {
+    //       success: false,
+    //       message: "A user already exists for this employee.",
+    //       status: 400,
+    //     };
+    //   }
 
-      const employee = await prisma.hrms_d_employee.findUnique({
-        where: { id: Number(data.employee_id) },
-        select: {
-          full_name: true,
-          email: true,
-          phone_number: true,
-          address: true,
-        },
-      });
+    //   const employee = await prisma.hrms_d_employee.findUnique({
+    //     where: { id: Number(data.employee_id) },
+    //     select: {
+    //       full_name: true,
+    //       email: true,
+    //       phone_number: true,
+    //       address: true,
+    //     },
+    //   });
 
-      if (!employee) {
-        return {
-          success: false,
-          message: "Employee not found with the given ID.",
-          status: 400,
-        };
-      }
+    //   if (!employee) {
+    //     return {
+    //       success: false,
+    //       message: "Employee not found with the given ID.",
+    //       status: 400,
+    //     };
+    //   }
 
-      data.full_name = data.full_name || employee.full_name;
-      data.email = data.email || employee.email;
-      data.phone = data.phone || employee.phone_number;
-      data.address = data.address || employee.address;
-    }
+    //   data.full_name = data.full_name || employee.full_name;
+    //   data.email = data.email || employee.email;
+    //   data.phone = data.phone || employee.phone_number;
+    //   data.address = data.address || employee.address;
+    // }
 
-    const newUser = await prisma.hrms_m_user.create({
+    const newUser = await prisma.users.create({
       data: {
         username: data.username,
         password: data.password,
         email: data.email,
-        full_name: data.full_name,
-        phone: data.phone,
-        profile_img: data.profile_img,
-        address: data.address,
-        employee_id: Number(data.employee_id) || null,
+        company: data.company,
+        // profile_img: data.profile_img || null,
         createdby: data.createdby || 1,
         log_inst: data.log_inst || 1,
         createdate: new Date(),
       },
-      include: {
-        user_employee: {
-          select: {
-            id: true,
-            full_name: true,
-            email: true,
-            phone_number: true,
-            address: true,
-          },
-        },
-      },
     });
 
-    if (data.role_id) {
-      const role = await prisma.hrms_m_role.findUnique({
-        where: { id: data.role_id },
-      });
-
-      if (!role) {
-        return {
-          success: false,
-          message: `Role not found with ID: ${data.role_id}`,
-          status: 400,
-        };
-      }
-
-      await prisma.hrms_d_user_role.create({
-        data: {
-          user_id: newUser.id,
-          role_id: data.role_id,
-        },
-      });
-    }
-
-    const completeUser = await prisma.hrms_m_user.findUnique({
-      where: { id: newUser.id },
-      include: {
-        user_employee: {
-          select: {
-            id: true,
-            full_name: true,
-            email: true,
-            phone_number: true,
-            address: true,
-          },
-        },
-        hrms_d_user_role: {
-          include: {
-            hrms_m_role: true,
-          },
-        },
-      },
-    });
-
-    return completeUser;
+    return newUser;
   } catch (error) {
     console.log(error);
     throw new CustomError(`Error creating user: ${error.message}`, 500);
@@ -248,13 +193,15 @@ const updateUser = async (id, data) => {
 // Find a user by email and include role
 const findUserByEmail = async (email) => {
   try {
-    const user = await prisma.hrms_m_user.findFirst({
+    const user = await prisma.users.findFirst({
       where: { email },
     });
 
     if (!user) throw new CustomError("User not found", 404);
     console.log("User found", user);
-    return await getUserWithRole(user.id, true);
+
+    return user;
+    // return await getUserWithRole(user.id, true);
   } catch (error) {
     console.log(error);
     throw new CustomError(`Error finding user by email: ${error.message}`, 503);
@@ -264,7 +211,10 @@ const findUserByEmail = async (email) => {
 // Find a user by ID and include role
 const findUserById = async (id) => {
   try {
-    return await getUserWithRole(parseInt(id));
+    return await prisma.users.findFirst({
+      where: { id: parseInt(id) },
+    });
+    // return await getUserWithRole(parseInt(id));
   } catch (error) {
     throw new CustomError(`Error finding user by ID: ${error.message}`, 503);
   }

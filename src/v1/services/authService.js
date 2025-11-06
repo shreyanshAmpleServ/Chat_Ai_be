@@ -4,13 +4,13 @@ const jwt = require("jsonwebtoken");
 const userModel = require("../models/userModel"); // Import the user model
 const redis = require("redis");
 const CustomError = require("../../utils/CustomError");
-const { use } = require("../routes/contactRoutes");
+// const { use } = require("../routes/contactRoutes");
 const redisClient = redis.createClient({ url: process.env.REDIS_URL });
 redisClient.connect();
 require("dotenv").config();
 const jwtSecret = process.env.JWT_SECRET;
 const BCRYPT_COST = 8;
-const registerUser = async (email, password, fullName = null, role_id) => {
+const registerUser = async (email, password, username = null, company) => {
   try {
     // Hash the password
     const hashedPasswordPromise = bcrypt.hash(password, BCRYPT_COST);
@@ -24,11 +24,10 @@ const registerUser = async (email, password, fullName = null, role_id) => {
 
     // Create the user in the database
     const user = await userModel.createUser({
-      username: email,
       email,
       password: hashedPassword,
-      full_name: fullName,
-      role_id,
+      username,
+      company,
     });
 
     // Cache the user data in Redis (expire after 1 hour)

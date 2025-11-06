@@ -322,7 +322,7 @@ model hrms_d_employee {
   loan_req_employee                               hrms_d_loan_request[]
   medical_employee_id                             hrms_d_medical_record[]
   midmonth_payroll_processing_employee            hrms_d_midmonth_payroll_processing[]
-  hrms_monthly_payroll_employee                   hrms_d_monthly_payroll_processing[]               @relation("MonthlyPayrollRelation")
+  hrms_monthly_payroll_employee                   hrms_d_monthly_payroll_processing[]               @relation("MonthlyPayrollRelation") @ignore
   notification_log_employee                       hrms_d_notification_log[]
   overtime_payroll_processing_employee            hrms_d_overtime_payroll_processing[]
   payslip_employee                                hrms_d_payslip[]
@@ -1366,6 +1366,7 @@ model hrms_m_shift_master {
   start_time             String?                   @db.VarChar(50)
   end_time               String?                   @db.VarChar(50)
   is_active              String?                   @default("Y") @db.Char(1)
+  weekoff_days           String?                   @db.VarChar(50)
   createdate             DateTime?                 @default(now(), map: "DF__hrms_m_sh__creat__25518C17") @db.DateTime
   createdby              Int
   updatedate             DateTime?                 @db.DateTime
@@ -1660,6 +1661,7 @@ model hrms_d_daily_attendance_entry {
 }
 
 model hrms_d_monthly_payroll_processing {
+
   id                            Int             @id @default(autoincrement())
   employee_id                   Int
   payroll_month                 Int             @db.SmallInt
@@ -1756,6 +1758,8 @@ model hrms_d_monthly_payroll_processing {
   /// This field was commented out because of an invalid name. Please provide a valid one that matches [a-zA-Z][a-zA-Z0-9_]*
   // 1334 Decimal? @map("1334") @db.Decimal(18, 4)
   hrms_monthly_payroll_employee hrms_d_employee @relation("MonthlyPayrollRelation", fields: [employee_id], references: [id], onUpdate: NoAction, map: "FK__hrms_d_mo__emplo__08A03ED0")
+
+  @@ignore
 }
 
 model hrms_d_arrear_adjustments {

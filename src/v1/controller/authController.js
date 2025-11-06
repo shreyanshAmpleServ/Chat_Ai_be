@@ -2,11 +2,12 @@ const { registerUser, loginUser } = require("../services/authService");
 
 const register = async (req, res, next) => {
   try {
-    const { email, password, full_name = null, role_id } = req.body;
-
-    const user = await registerUser(email, password, full_name, role_id);
+    const { email, password, username = null, company } = req.body;
+    console.log("Register Data :", req.body);
+    const user = await registerUser(email, password, username, company);
     res.status(201).success("User registered successfully", user);
   } catch (error) {
+    console.log("Auth Error", error);
     next(error);
   }
 };
@@ -24,7 +25,7 @@ const login = async (req, res, next) => {
       sameSite: "Strict",
       maxAge: 30 * 24 * 60 * 60 * 1000, // Cookie  valid for 30 days
     });
-    res.status(200).success("Login successful", data.user);
+    res.status(200).success("Login successful", data);
   } catch (error) {
     console.log("Auth Error", error);
     next(error);
