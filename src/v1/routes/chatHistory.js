@@ -26,7 +26,11 @@ router.get(
 //   authenticateToken,
 //   chatHistoryController.updateUser
 // ); // Update user by ID
-// router.delete("/users/:id", authenticateToken, chatHistoryController.deleteUser); // Delete user by ID
+router.delete(
+  "/chat-history/:id",
+  authenticateToken,
+  chatHistoryController.deletChatHistory
+); // Delete user by ID
 // router.get("/users", authenticateToken, chatHistoryController.getAllUsers); // Get all users
 // router.get("/userByToken", authenticateToken, chatHistoryController.getUserByToken); // Get users by token
 

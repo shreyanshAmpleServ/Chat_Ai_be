@@ -32,7 +32,7 @@ const askQuestion = async (data) => {
     const { userId, question, sql_code, categoryTag } = data;
     // const aiAnswer = { text: "This is a placeholder answer." };
     const aiAnswer = await fetchAnswerFromThirdAPI(question);
-    console.log("AI Answer:", aiAnswer);
+    // console.log("AI Answer:", aiAnswer);
     const result = await prisma.$transaction(async (tx) => {
       let chatId = data?.chatId ?? null;
 
@@ -41,7 +41,6 @@ const askQuestion = async (data) => {
           where: { id: chatId },
           select: { id: true, user_id: true },
         });
-        console.log("Existing Chat:", chat, "for userId:", userId, chatId);
         if (!chat || chat.user_id !== userId)
           throw new Error("Chat not found or does not belong to this user");
       } else {
@@ -56,7 +55,7 @@ const askQuestion = async (data) => {
           },
           select: { id: true },
         });
-        chatId = created.id;
+        chatId = created?.id;
       }
 
       const detail = await tx.chatDetails.create({
@@ -139,9 +138,20 @@ const getChatHistory = async (
     throw new CustomError("Error retrieving chat", 503);
   }
 };
+const deletChatHistory = async (id) => {
+  try {
+    const chats = await prisma.ChatHistory.delete({
+      where: { id },
+    });
+    return chats;
+  } catch (error) {
+    throw new CustomError("Error retrieving chat", 503);
+  }
+};
 
 module.exports = {
   askQuestion,
   getChatDetail,
   getChatHistory,
+  deletChatHistory,
 };

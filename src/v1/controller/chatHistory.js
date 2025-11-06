@@ -62,9 +62,19 @@ const getChatHistory = async (req, res, next) => {
     next(error);
   }
 };
+const deletChatHistory = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const users = await chatHistoryService.deletChatHistory(Number(id));
+    res.status(200).success("Chat deleted successfully", true);
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   askQuestion,
   getChatDetail,
+  deletChatHistory,
   getChatHistory,
 };

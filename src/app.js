@@ -23,15 +23,10 @@ app.use(cookieParser());
 app.use(
   cors({
     origin: [
-      "http://localhost:3000",
-      "http://localhost:3001",
+      "https://aiva.dcctz.com",
       "http://localhost:5175",
       "http://localhost:5173",
       "http://localhost:5174",
-      "http://192.168.29.90:3000",
-      "http://192.168.29.74:3000",
-      "http://10.160.5.101:3000",
-      "http://10.160.5.101:3001",
     ], // Replace with your frontend URL
     credentials: true, // Allow cookies to be sent
   })

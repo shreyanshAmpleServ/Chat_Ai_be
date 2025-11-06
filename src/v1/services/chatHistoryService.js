@@ -7,6 +7,9 @@ const askQuestion = async (data) => {
 const getChatDetail = async (id) => {
   return await chatHistoryModal.getChatDetail(id);
 };
+const deletChatHistory = async (id) => {
+  return await chatHistoryModal.deletChatHistory(id);
+};
 
 const getChatHistory = async (
   userId,
@@ -31,5 +34,6 @@ const getChatHistory = async (
 module.exports = {
   askQuestion,
   getChatDetail,
+  deletChatHistory,
   getChatHistory,
 };
