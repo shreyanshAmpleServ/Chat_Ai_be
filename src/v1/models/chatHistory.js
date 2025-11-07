@@ -1,24 +1,23 @@
 const { PrismaClient } = require("@prisma/client");
 const CustomError = require("../../utils/CustomError");
-const { includes } = require("zod/v4");
+const { includes, success } = require("zod/v4");
 const prisma = new PrismaClient();
 
-async function fetchAnswerFromThirdAPI(question) {
+async function fetchAnswerFromThirdAPI(question, token) {
   const res = await fetch("https://ai.dcctz.com/demobot/demo-ask", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${process.env.ANSWER_API_KEY ?? ""}`,
     },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ question, token }),
   });
-  console.log("Third API response status:", res.status);
-
+  // console.log("Third API response status: ???????????", res);
   if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(
-      `Answer API failed (${res.status}): ${txt || res.statusText}`
-    );
+    return false;
+    // throw new CustomError(
+    //   `Answer API failed (${res.status}): ${res.statusText}`
+    // );
   }
   const data = await res.json();
 
@@ -30,14 +29,22 @@ async function fetchAnswerFromThirdAPI(question) {
 // Create a new chat
 const askQuestion = async (data) => {
   try {
-    const { userId, question, sql_code, categoryTag } = data;
+    const { userId, question, sql_code, categoryTag, token } = data;
     // const aiAnswer = { text: "This is a placeholder answer." };
-    const aiAnswer = await fetchAnswerFromThirdAPI(question);
+    const aiAnswer = await fetchAnswerFromThirdAPI(question, token);
     // console.log("AI Answer:", aiAnswer);
+    if (!aiAnswer) {
+      return {
+        status: 502,
+        message: "Error creating chat: Answer API failed",
+        success: false,
+      };
+      // throw new CustomError("Error creating chat: Answer API failed", 502);
+    }
     let modifiedAnswer = aiAnswer?.data;
-    const isEmpty =
-      aiAnswer?.data?.trim() === "|  |\n|---|\n| None |" ||
-      aiAnswer?.data?.trim().toLowerCase().includes("none");
+    const isEmpty = aiAnswer?.data?.trim() === "|  |\n|---|\n| None |";
+    // ||
+    // aiAnswer?.data?.trim().toLowerCase().includes("none");
 
     if (isEmpty) {
       modifiedAnswer =

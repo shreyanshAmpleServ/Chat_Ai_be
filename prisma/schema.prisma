@@ -8,36 +8,40 @@ datasource db {
 }
 
 model users {
-  id               Int           @id @default(autoincrement())
-  username         String        @db.NVarChar(100)
-  password         String?       @db.NVarChar(255)
-  email            String        @db.NVarChar(255)
-  phone            String?       @db.NVarChar(15)
-  image            String?       @db.NVarChar(255)
-  company          String?       @db.NVarChar(255)
-  databaseHost     String?
-  databasePort     String?
-  databaseName     String?
-  databaseUsername String?
-  databasePassword String?
-  databaseType     String?
-  is_active        String        @default("Y") @db.Char(1)
-  createdate       DateTime      @default(now()) @db.DateTime
-  updatedate       DateTime?     @db.DateTime
-  createdby        Int
-  updatedby        Int?
-  log_inst         Int?
-  chat_user        ChatHistory[]
+  id                       Int           @id @default(autoincrement())
+  username                 String        @db.NVarChar(100)
+  password                 String?       @db.NVarChar(255)
+  email                    String        @db.NVarChar(255)
+  phone                    String?       @db.NVarChar(15)
+  image                    String?       @db.NVarChar(255)
+  is_active                String        @default("Y") @db.Char(1)
+  createdate               DateTime      @default(now()) @db.DateTime
+  updatedate               DateTime?     @db.DateTime
+  createdby                Int
+  updatedby                Int?
+  log_inst                 Int?
+  databaseType             String?       @db.NChar(100)
+  server                   String?       @db.NChar(100)
+  databaseHost             String?
+  databasePort             String?       @db.NChar(50)
+  databaseUsername         String?
+  databasePassword         String?
+  databaseName             String?
+  ssl                      String?
+  encrypt                  String?       @db.Char(10)
+  trust_server_certificate String?       @db.NChar(10)
+  company                  String?       @db.NVarChar(255)
+  chat_user                ChatHistory[]
 }
 
 model ChatHistory {
   id            Int           @id @default(autoincrement())
   user_id       Int
-  title         String?
   startTime     DateTime      @default(now())
   endTime       DateTime?
   totalMessages Int?
   categoryTag   String?
+  title         String?
   ChatDetails   ChatDetails[] @relation("ChatToQA")
   chat_user     users         @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
@@ -46,10 +50,10 @@ model ChatDetails {
   id          Int         @id @default(autoincrement())
   chatId      Int
   question    String
-  aiAnswer    String
+  aiAnswer    String      @db.NText
   sql_code    String?
   categoryTag String?
-  chat        ChatHistory @relation("ChatToQA", fields: [chatId], references: [id], onDelete: Cascade)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime
+  chat        ChatHistory @relation("ChatToQA", fields: [chatId], references: [id], onDelete: Cascade)
 }

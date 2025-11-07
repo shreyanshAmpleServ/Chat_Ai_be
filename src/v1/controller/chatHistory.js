@@ -19,6 +19,7 @@ const askQuestion = async (req, res, next) => {
     const user = await chatHistoryService.askQuestion({
       ...req.body,
       userId: req.user.id,
+      token: req.token,
     });
 
     // If chatHistoryService.askQuestion returns an error object, handle it here
