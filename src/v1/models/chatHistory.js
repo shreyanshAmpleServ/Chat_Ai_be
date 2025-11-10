@@ -4,7 +4,9 @@ const { includes, success } = require("zod/v4");
 const prisma = new PrismaClient();
 
 async function fetchAnswerFromThirdAPI(question, token) {
-  const res = await fetch("https://ai.dcctz.com/demobot/demo-ask", {
+  console.log("Question  :", question, token);
+  const res = await fetch("https://ai.dcctz.com/mobilebot/ask-demo", {
+    // const res = await fetch("https://ai.dcctz.com/demobot/demo-ask", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -12,7 +14,7 @@ async function fetchAnswerFromThirdAPI(question, token) {
     },
     body: JSON.stringify({ question, token }),
   });
-  // console.log("Third API response status: ???????????", res);
+  console.log("Third API response status: ???????????", res);
   if (!res.ok) {
     return false;
     // throw new CustomError(
