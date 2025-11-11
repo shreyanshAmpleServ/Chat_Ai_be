@@ -72,14 +72,13 @@ const authenticateAiToken = async (req, res, next) => {
     console.log("User Details  : ", user);
     req.dbConfig = {
       kind: cleanSpaces(user?.databaseType) ?? "mssql",
-      host: cleanSpaces(user?.databaseHost) ?? "10.160.5.101",
-      server: cleanSpaces(user?.server) ?? "10.160.5.101",
+      host: cleanSpaces(user?.databaseHost) ?? "SAP10",
+      server: cleanSpaces(user?.server) ?? "SAP10",
       port: cleanSpaces(user?.databasePort) ?? 1433,
       user: cleanSpaces(user?.databaseUsername) ?? "sa",
       username: cleanSpaces(user?.databaseUsername) ?? "sa",
-      password: cleanSpaces(user?.databasePassword) ?? "Click@321$",
-      database:
-        cleanSpaces(user?.databaseName) ?? "DCC_Enterprise_Ai_Assistant",
+      password: cleanSpaces(user?.databasePassword) ?? "SQL@2020",
+      database: cleanSpaces(user?.databaseName) ?? "SBO_SM_2020ForFM40",
       ssl: false,
       encrypt: false,
       trustServerCertificate:
