@@ -3,7 +3,7 @@ const CustomError = require("../../utils/CustomError");
 const { includes, success } = require("zod/v4");
 const prisma = new PrismaClient();
 
-async function fetchAnswerFromThirdAPI(question, token) {
+async function fetchAnswerFromThirdAPI(question, token, db_api) {
   console.log("Question  :", question, token);
   const res = await fetch("https://ai.dcctz.com/mobilebot/ask-demo", {
     // const res = await fetch("https://ai.dcctz.com/demobot/demo-ask", {
@@ -12,7 +12,7 @@ async function fetchAnswerFromThirdAPI(question, token) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${process.env.ANSWER_API_KEY ?? ""}`,
     },
-    body: JSON.stringify({ question, token }),
+    body: JSON.stringify({ question, token, db_api }),
   });
   console.log("Third API response status: ???????????", res);
   if (!res.ok) {
@@ -31,9 +31,9 @@ async function fetchAnswerFromThirdAPI(question, token) {
 // Create a new chat
 const askQuestion = async (data) => {
   try {
-    const { userId, question, sql_code, categoryTag, token } = data;
+    const { userId, db_api, question, sql_code, categoryTag, token } = data;
     // const aiAnswer = { text: "This is a placeholder answer." };
-    const aiAnswer = await fetchAnswerFromThirdAPI(question, token);
+    const aiAnswer = await fetchAnswerFromThirdAPI(question, token, db_api);
     // console.log("AI Answer:", aiAnswer);
     if (!aiAnswer) {
       return {
@@ -119,19 +119,58 @@ const askQuestion = async (data) => {
   }
 };
 
-// Find a chat by ID
-const getChatDetail = async (id) => {
-  try {
-    const chat = await prisma.ChatHistory.findUnique({
-      where: { id: parseInt(id) },
-      include: {
-        ChatDetails: true, // load related details
-      },
-    });
+// // Find a chat by ID
+// const getChatDetail = async (id) => {
+//   try {
+//     const chat = await prisma.ChatHistory.findUnique({
+//       where: { id: parseInt(id) },
+//       include: {
+//         ChatDetails: true, // load related details
+//       },
+//     });
 
-    return chat;
+//     return chat;
+//   } catch (error) {
+//     throw new CustomError(`Error finding chat by ID: ${error.message}`, 503);
+//   }
+// };
+// Fetch chat messages with cursor-based pagination (WhatsApp-style scroll up to load older messages)
+const getChatDetail = async ({ chatId, limit = 10, cursor = null }) => {
+  try {
+    const take = limit + 1; // fetch one extra to detect "hasMore"
+    const where = { chatId: parseInt(chatId) };
+
+    const findArgs = {
+      where,
+      orderBy: { createdAt: "desc" }, // newest first for efficient cursor paging
+      // take,
+    };
+
+    // if (cursor) {
+    //   // cursor should be the message id of the last item from previous page (the oldest currently loaded)
+    //   findArgs.cursor = { id: parseInt(cursor, 10) };
+    //   findArgs.skip = 1; // skip the cursor item itself
+    // }
+
+    const rows = await prisma.ChatDetails.findMany(findArgs);
+
+    const hasMore = rows.length === take;
+    const page = hasMore ? rows.slice(0, -1) : rows; // remove extra item if present
+
+    // rows were loaded newest-first; return them oldest-first so client can append at top naturally
+    const messages = page.reverse();
+
+    const nextCursor = messages.length ? messages[0].id : null;
+    // nextCursor represents the id of the oldest message in this returned page.
+    // When client loads more (older) messages, pass that id as cursor to fetch earlier items.
+
+    return { ChatDetails: messages, nextCursor, hasMore };
   } catch (error) {
-    throw new CustomError(`Error finding chat by ID: ${error.message}`, 503);
+    console.log("Error in getChatDetail:", error);
+    throw new CustomError(
+      `Error fetching paginated chat messages: ${error.message}`,
+      503
+    );
   }
 };
 

@@ -19,6 +19,7 @@ const askQuestion = async (req, res, next) => {
     const user = await chatHistoryService.askQuestion({
       ...req.body,
       userId: req.user.id,
+      db_api: req.user.db_api,
       token: req.token,
     });
 
@@ -39,9 +40,15 @@ const askQuestion = async (req, res, next) => {
 
 const getChatDetail = async (req, res, next) => {
   try {
-    const user = await chatHistoryService.getChatDetail(req.params.id);
-    if (!user) throw new CustomError("User not found", 404);
-    res.status(200).success(null, user);
+    const { id } = req.params;
+    const { limit = 10, cursor = null } = req.query;
+    const Chats = await chatHistoryService.getChatDetail({
+      chatId: Number(id),
+      limit: parseInt(limit, 10),
+      cursor: cursor || null,
+    });
+    if (!Chats) throw new CustomError("Chats not found", 404);
+    res.status(200).success(null, Chats);
   } catch (error) {
     next(error);
   }

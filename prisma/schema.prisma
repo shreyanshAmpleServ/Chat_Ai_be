@@ -31,6 +31,7 @@ model users {
   encrypt                  String?       @db.Char(10)
   trust_server_certificate String?       @db.NChar(10)
   company                  String?       @db.NVarChar(255)
+  db_api                   String?
   chat_user                ChatHistory[]
 }
 

@@ -27,7 +27,11 @@ const authenticateToken = async (req, res, next) => {
       return res.error("User not found", 403); // Using res.error for user not found
     }
     req.token = token;
-    req.user = { id: user.id, email: user.email };
+    if (user.db_api) {
+      req.user = { id: user.id, email: user.email, db_api: user.db_api };
+    } else {
+      req.user = { id: user.id, email: user.email };
+    }
     // ✅ OPTIMIZED: Get or reuse existing connection
     // req.dbConnection = connectionPool.getOrCreateConnection(
     //   decoded.userId,
@@ -69,7 +73,6 @@ const authenticateAiToken = async (req, res, next) => {
     //   decoded.dbConfig.kind,
     //   decoded.dbConfig
     // );
-    console.log("User Details  : ", user);
     req.dbConfig = {
       kind: cleanSpaces(user?.databaseType) ?? "mssql",
       host: cleanSpaces(user?.databaseHost) ?? "SAP10",
