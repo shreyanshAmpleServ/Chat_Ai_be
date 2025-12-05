@@ -5,7 +5,8 @@ const prisma = new PrismaClient();
 
 async function fetchAnswerFromThirdAPI(question, token, db_api) {
   console.log("Question  :", question, token);
-  const res = await fetch("https://ai.dcctz.com/mobilebot/ask-demo", {
+  console.log("Payload:", JSON.stringify({ question, token, db_api }));
+  const res = await fetch("https://ai.dcctz.com/aivabot/ask-demo", {
     // const res = await fetch("https://ai.dcctz.com/demobot/demo-ask", {
     method: "POST",
     headers: {
