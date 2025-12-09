@@ -41,18 +41,44 @@ const askQuestion = async (req, res, next) => {
 const getChatDetail = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { limit = 10, cursor = null } = req.query;
-    const Chats = await chatHistoryService.getChatDetail({
+
+    const rawLimit = Number(req.query.limit);
+    const limit = Number.isFinite(rawLimit)
+      ? Math.min(Math.max(rawLimit, 1), 50)
+      : 20;
+
+    const beforeId = req.query.beforeId ? Number(req.query.beforeId) : null;
+
+    const result = await chatHistoryService.getChatDetail({
       chatId: Number(id),
-      limit: parseInt(limit, 10),
-      cursor: cursor || null,
+      limit,
+      beforeId, // pass this to service
     });
-    if (!Chats) throw new CustomError("Chats not found", 404);
-    res.status(200).success(null, Chats);
+
+    if (!result) throw new CustomError("Chats not found", 404);
+
+    res.status(200).success(null, result);
+    // res.status(200).json(result);
   } catch (error) {
     next(error);
   }
 };
+
+// const getChatDetail = async (req, res, next) => {
+//   try {
+//     const { id } = req.params;
+//     const { limit = 10, cursor = null } = req.query;
+//     const Chats = await chatHistoryService.getChatDetail({
+//       chatId: Number(id),
+//       limit: parseInt(limit, 10),
+//       cursor: cursor || null,
+//     });
+//     if (!Chats) throw new CustomError("Chats not found", 404);
+//     res.status(200).success(null, Chats);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
 const getChatHistory = async (req, res, next) => {
   try {
     const { page, size, search, startDate, endDate, is_active } = req.query;

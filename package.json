@@ -2,6 +2,7 @@
   "name": "hrms-backend",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
     "start": "nodemon src/server.js",
     "generate": "npx rimraf node_modules/.prisma && npx prisma generate && nodemon src/server.js",

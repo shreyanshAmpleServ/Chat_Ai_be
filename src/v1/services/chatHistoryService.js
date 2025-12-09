@@ -4,8 +4,8 @@ const askQuestion = async (data) => {
   return await chatHistoryModal.askQuestion(data);
 };
 
-const getChatDetail = async (id) => {
-  return await chatHistoryModal.getChatDetail(id);
+const getChatDetail = async (id, limit, beforeId) => {
+  return await chatHistoryModal.getChatDetail(id, limit, beforeId);
 };
 const deletChatHistory = async (id) => {
   return await chatHistoryModal.deletChatHistory(id);

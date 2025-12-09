@@ -4,10 +4,8 @@ const { includes, success } = require("zod/v4");
 const prisma = new PrismaClient();
 
 async function fetchAnswerFromThirdAPI(question, token, db_api) {
-  console.log("Question  :", question, token);
-  console.log("Payload:", JSON.stringify({ question, token, db_api }));
+  // console.log("Payload:", JSON.stringify({ question, token, db_api }));
   const res = await fetch("https://ai.dcctz.com/aivabot/ask-demo", {
-    // const res = await fetch("https://ai.dcctz.com/demobot/demo-ask", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -19,7 +17,7 @@ async function fetchAnswerFromThirdAPI(question, token, db_api) {
   if (!res.ok) {
     return false;
     // throw new CustomError(
-    //   `Answer API failed (${res.status}): ${res.statusText}`
+    //   `Answer API failed (${res.status}): ${res.statusText}`,500
     // );
   }
   const data = await res.json();
@@ -36,15 +34,16 @@ const askQuestion = async (data) => {
     // const aiAnswer = { text: "This is a placeholder answer." };
     const aiAnswer = await fetchAnswerFromThirdAPI(question, token, db_api);
     // console.log("AI Answer:", aiAnswer);
-    if (!aiAnswer) {
-      return {
-        status: 502,
-        message: "Error creating chat: Answer API failed",
-        success: false,
-      };
-      // throw new CustomError("Error creating chat: Answer API failed", 502);
-    }
-    let modifiedAnswer = aiAnswer?.data;
+    // if (!aiAnswer) {
+    //   return {
+    //     status: 502,
+    //     message: "Error creating chat: Answer API failed",
+    //     success: false,
+    //   };
+    // }
+    let modifiedAnswer = !aiAnswer
+      ? "I'm sorry, there is no relevant data available to answer your question."
+      : aiAnswer?.data;
     const isEmpty = aiAnswer?.data?.trim() === "|  |\n|---|\n| None |";
     // ||
     // aiAnswer?.data?.trim().toLowerCase().includes("none");
@@ -136,45 +135,99 @@ const askQuestion = async (data) => {
 //   }
 // };
 // Fetch chat messages with cursor-based pagination (WhatsApp-style scroll up to load older messages)
-const getChatDetail = async ({ chatId, limit = 10, cursor = null }) => {
+// const getChatDetail = async ({ chatId,  limit, beforeId }) => {
+//   try {
+//     const take = limit + 1; // fetch one extra to detect "hasMore"
+//     const where = { chatId: parseInt(chatId) };
+
+//     const findArgs = {
+//       where,
+//       orderBy: { createdAt: "desc" }, // newest first for efficient cursor paging
+//       // take,
+//     };
+
+//     // if (cursor) {
+//     //   // cursor should be the message id of the last item from previous page (the oldest currently loaded)
+//     //   findArgs.cursor = { id: parseInt(cursor, 10) };
+//     //   findArgs.skip = 1; // skip the cursor item itself
+//     // }
+
+//     const rows = await prisma.ChatDetails.findMany(findArgs);
+
+//     const hasMore = rows.length === take;
+//     const page = hasMore ? rows.slice(0, -1) : rows; // remove extra item if present
+
+//     // rows were loaded newest-first; return them oldest-first so client can append at top naturally
+//     const messages = page.reverse();
+
+//     const nextCursor = messages.length ? messages[0].id : null;
+//     // nextCursor represents the id of the oldest message in this returned page.
+//     // When client loads more (older) messages, pass that id as cursor to fetch earlier items.
+
+//     return { ChatDetails: messages, nextCursor, hasMore };
+//   } catch (error) {
+//     console.log("Error in getChatDetail:", error);
+//     throw new CustomError(
+//       `Error fetching paginated chat messages: ${error.message}`,
+//       503
+//     );
+//   }
+// };
+
+const getChatDetail = async ({ chatId, limit = 20, beforeId = null }) => {
   try {
-    const take = limit + 1; // fetch one extra to detect "hasMore"
-    const where = { chatId: parseInt(chatId) };
+    // clamp limit 1..50
+    const safeLimit = Math.max(1, Math.min(Number(limit) || 20, 50));
+    // fetch one extra row to detect "hasMore"
+    const take = safeLimit + 1;
 
-    const findArgs = {
+    const numericChatId = Number(chatId);
+    const numericBeforeId =
+      beforeId !== null && beforeId !== undefined && beforeId !== ""
+        ? Number(beforeId)
+        : null;
+
+    // Build where clause: older-than filter when beforeId is present
+    const where = numericBeforeId
+      ? { chatId: numericChatId, id: { lt: numericBeforeId } }
+      : { chatId: numericChatId };
+
+    // Query newest-first for index efficiency, then reverse in memory
+    const rowsDesc = await prisma.ChatDetails.findMany({
       where,
-      orderBy: { createdAt: "desc" }, // newest first for efficient cursor paging
-      // take,
-    };
+      orderBy: { id: "desc" }, // use id for stable monotonic paging
+      take, // <-- IMPORTANT: enforce limit (+1 sentinel)
+      select: {
+        id: true,
+        chatId: true,
+        question: true,
+        aiAnswer: true, // rename to match your column if needed
+        sql_code: true,
+        categoryTag: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
-    // if (cursor) {
-    //   // cursor should be the message id of the last item from previous page (the oldest currently loaded)
-    //   findArgs.cursor = { id: parseInt(cursor, 10) };
-    //   findArgs.skip = 1; // skip the cursor item itself
-    // }
+    // Trim the extra item (if present) and compute hasMore
+    const hasMore = rowsDesc.length === take;
+    const pageDesc = hasMore ? rowsDesc.slice(0, -1) : rowsDesc;
 
-    const rows = await prisma.ChatDetails.findMany(findArgs);
+    // Return oldest→newest to the client
+    const messages = pageDesc.slice().reverse();
 
-    const hasMore = rows.length === take;
-    const page = hasMore ? rows.slice(0, -1) : rows; // remove extra item if present
-
-    // rows were loaded newest-first; return them oldest-first so client can append at top naturally
-    const messages = page.reverse();
-
+    // Cursor for next OLDER page = oldest id of this page
     const nextCursor = messages.length ? messages[0].id : null;
-    // nextCursor represents the id of the oldest message in this returned page.
-    // When client loads more (older) messages, pass that id as cursor to fetch earlier items.
 
     return { ChatDetails: messages, nextCursor, hasMore };
   } catch (error) {
-    console.log("Error in getChatDetail:", error);
+    console.error("Error in getChatDetail:", error);
     throw new CustomError(
-      `Error fetching paginated chat messages: ${error.message}`,
+      `Error fetching chat messages: ${error.message}`,
       503
     );
   }
 };
-
 // Get all chats
 const getChatHistory = async (
   userId,
