@@ -13,7 +13,7 @@ async function fetchAnswerFromThirdAPI(question, token, db_api) {
     },
     body: JSON.stringify({ question, token, db_api }),
   });
-  console.log("Third API response status: ???????????", res);
+  // console.log("Third API response status: ???????????", res);
   if (!res.ok) {
     return false;
     // throw new CustomError(
